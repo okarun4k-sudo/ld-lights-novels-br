@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>LN Reader - Leia e Publique Light Novels</title>
+    <meta name="description" content="Plataforma dedicada à leitura e publicação de Light Novels. Conectando autores e leitores com a melhor experiência.">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LN Reader">
+    <meta property="og:description" content="Sua plataforma favorita para ler e publicar Light Novels independentes.">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630.png?text=LN+Reader+Capa">
+    
+    <link rel="icon" href="https://8upload.com/image/79fb0c2318b10c18/714_Sem_T__tulo_20260315130306.png" type="image/png">
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <header>
+        <button id="menu-btn"><i data-lucide="menu"></i></button>
+        <h1>LN Reader</h1>
+        <button id="search-toggle-btn"><i data-lucide="search"></i></button>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu</h2>
+            <button id="close-menu-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="profile-summary hidden" id="sidebar-profile-summary">
+            <img src="" id="sidebar-avatar" alt="Avatar">
+            <div>
+                <strong id="sidebar-username">Usuário</strong>
+                <a href="#" data-link="perfil" class="view-profile-link">Ver Perfil</a>
+            </div>
+        </div>
+        <nav>
+            <a href="#" data-link="home"><i data-lucide="home"></i> Home</a>
+            <a href="#" data-link="favoritos" class="auth-required"><i data-lucide="bookmark"></i> Favoritos</a>
+            <a href="#" data-link="historico" class="auth-required"><i data-lucide="history"></i> Histórico de Leitura</a>
+            <a href="#" data-link="upload-novel" class="auth-required"><i data-lucide="upload"></i> Upload de Novel</a>
+            <a href="#" data-link="minhas-novels" class="auth-required"><i data-lucide="book"></i> Minhas Novels</a>
+            
+            <div class="divider"></div>
+            
+            <p class="filter-title">Filtros de Conteúdo</p>
+            <div class="toggle-container">
+                <label for="filter-18">Mostrar +18</label>
+                <input type="checkbox" id="filter-18" class="home-filter">
+            </div>
+            <div class="toggle-container">
+                <label for="filter-sensible">Mostrar Temas Sensíveis</label>
+                <input type="checkbox" id="filter-sensible" class="home-filter">
+            </div>
+            <div class="toggle-container">
+                <label for="filter-gore">Mostrar Gore</label>
+                <input type="checkbox" id="filter-gore" class="home-filter">
+            </div>
+
+            <div class="divider"></div>
+            
+            <a href="#" id="login-link"><i data-lucide="log-in"></i> Login / Registrar</a>
+            <a href="#" id="logout-link" class="hidden"><i data-lucide="log-out"></i> Sair</a>
+            <a href="#" id="sobre-link"><i data-lucide="info"></i> Sobre</a>
+            <a href="#" id="regras-link"><i data-lucide="file-warning"></i> Regras de Postagem</a>
+            <a href="#" id="privacidade-link"><i data-lucide="shield"></i> Termos e Privacidade</a>
+            <a href="#" id="doacoes-link"><i data-lucide="heart-handshake" style="color: var(--danger-color);"></i> Apoie o Site (Doações)</a>
+        </nav>
+    </aside>
+    <div id="overlay" class="overlay"></div>
+
+    <main id="app-container">
+        
+        <section id="view-home" class="view active">
+            <div class="search-bar hidden" id="search-bar-container">
+                <input type="text" id="search-input" placeholder="Buscar por título ou autor...">
+                <select id="search-genre">
+                    <option value="">Todos os Gêneros</option>
+                    <option value="Ação">Ação</option>
+                    <option value="Comédia">Comédia</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Fantasia">Fantasia</option>
+                    <option value="Harém">Harém</option>
+                    <option value="Isekai">Isekai</option>
+                    <option value="Mistério">Mistério</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Slice of Life">Slice of Life</option>
+                    <option value="Sobrenatural">Sobrenatural</option>
+                    <option value="Terror">Terror</option>
+                    <option value="Wuxia">Wuxia</option>
+                    <option value="Xianxia">Xianxia</option>
+                </select>
+            </div>
+            <div id="novels-grid" class="grid"></div>
+        </section>
+
+        <section id="view-favoritos" class="view hidden">
+            <h2>Meus Favoritos</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Obras que você marcou como favoritas.</p>
+            <div id="favoritos-grid" class="grid"></div>
+        </section>
+
+        <section id="view-historico" class="view hidden">
+            <h2>Histórico de Leitura</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Últimas obras que você leu.</p>
+            <div id="historico-grid" class="grid"></div>
+        </section>
+
+        <section id="view-novel" class="view hidden">
+            <button class="back-btn" data-link="home"><i data-lucide="arrow-left"></i> Voltar</button>
+            <div id="novel-details-content"></div>
+            <div class="chapter-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="btn-add-chapter" class="btn-primary hidden" style="margin-top: 20px; flex: 1;">Adicionar Capítulo</button>
+                <button id="btn-edit-novel" class="btn-secondary hidden" style="margin-top: 20px; flex: 1;">Editar Novel</button>
+            </div>
+            <div id="chapter-list" class="list" style="margin-top: 15px;"></div>
+        </section>
+
+        <section id="view-upload-novel" class="view hidden">
+            <h2>Publicar Light Novel</h2>
+            <form id="form-upload-novel">
+                <input type="text" id="novel-title" placeholder="Título da Novel" required>
+                <textarea id="novel-synopsis" placeholder="Sinopse" rows="4" required></textarea>
+                <input type="url" id="novel-cover" placeholder="URL da Capa" required>
+                <select id="novel-genre" required style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid var(--border-color); background:#2a2a2a; color:white;">
+                    <option value="" disabled selected>Selecione um Gênero</option>
+                    <option value="Ação">Ação</option>
+                    <option value="Comédia">Comédia</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Fantasia">Fantasia</option>
+                    <option value="Harém">Harém</option>
+                    <option value="Isekai">Isekai</option>
+                    <option value="Mistério">Mistério</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Slice of Life">Slice of Life</option>
+                    <option value="Sobrenatural">Sobrenatural</option>
+                    <option value="Terror">Terror</option>
+                    <option value="Wuxia">Wuxia</option>
+                    <option value="Xianxia">Xianxia</option>
+                </select>
+                
+                <div class="tags-container" style="margin-bottom: 20px; background: var(--surface-color); padding: 15px; border-radius: 8px;">
+                    <h4>Organização</h4>
+                    <div class="toggle-container">
+                        <label for="tag-volumes">Dividir em Volumes?</label>
+                        <input type="checkbox" id="tag-volumes">
+                    </div>
+                    
+                    <h4 style="margin-top: 15px;">Avisos de Conteúdo</h4>
+                    <div class="toggle-container">
+                        <label for="tag-18">Conteúdo Adulto (+18)</label>
+                        <input type="checkbox" id="tag-18">
+                    </div>
+                    <div class="toggle-container">
+                        <label for="tag-sensible">Temas Sensíveis</label>
+                        <input type="checkbox" id="tag-sensible">
+                    </div>
+                    <div class="toggle-container">
+                        <label for="tag-gore">Violência Extrema / Gore</label>
+                        <input type="checkbox" id="tag-gore">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Publicar Light Novel</button>
+            </form>
+        </section>
+
+        <section id="view-edit-novel" class="view hidden">
+            <button class="back-btn" id="back-to-novel-from-edit-btn"><i data-lucide="arrow-left"></i> Voltar para Novel</button>
+            <h2>Editar Light Novel</h2>
+            <form id="form-edit-novel">
+                <input type="text" id="edit-novel-title" placeholder="Título da Novel" required>
+                <textarea id="edit-novel-synopsis" placeholder="Sinopse" rows="4" required></textarea>
+                <input type="url" id="edit-novel-cover" placeholder="URL da Capa" required>
+                <select id="edit-novel-genre" required style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid var(--border-color); background:#2a2a2a; color:white;">
+                    <option value="" disabled>Selecione um Gênero</option>
+                    <option value="Ação">Ação</option>
+                    <option value="Comédia">Comédia</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Fantasia">Fantasia</option>
+                    <option value="Harém">Harém</option>
+                    <option value="Isekai">Isekai</option>
+                    <option value="Mistério">Mistério</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Slice of Life">Slice of Life</option>
+                    <option value="Sobrenatural">Sobrenatural</option>
+                    <option value="Terror">Terror</option>
+                    <option value="Wuxia">Wuxia</option>
+                    <option value="Xianxia">Xianxia</option>
+                </select>
+                
+                <div class="tags-container" style="margin-bottom: 20px; background: var(--surface-color); padding: 15px; border-radius: 8px;">
+                    <h4>Organização</h4>
+                    <div class="toggle-container">
+                        <label for="edit-tag-volumes">Dividir em Volumes?</label>
+                        <input type="checkbox" id="edit-tag-volumes">
+                    </div>
+
+                    <h4 style="margin-top: 15px;">Avisos de Conteúdo</h4>
+                    <div class="toggle-container">
+                        <label for="edit-tag-18">Conteúdo Adulto (+18)</label>
+                        <input type="checkbox" id="edit-tag-18">
+                    </div>
+                    <div class="toggle-container">
+                        <label for="edit-tag-sensible">Temas Sensíveis</label>
+                        <input type="checkbox" id="edit-tag-sensible">
+                    </div>
+                    <div class="toggle-container">
+                        <label for="edit-tag-gore">Violência Extrema / Gore</label>
+                        <input type="checkbox" id="edit-tag-gore">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Alterações</button>
+            </form>
+        </section>
+
+        <section id="view-upload-chapter" class="view hidden">
+            <button class="back-btn" id="back-to-novel-btn"><i data-lucide="arrow-left"></i> Voltar para Novel</button>
+            <h2 style="margin-top: 10px;">Publicar Capítulo</h2>
+            <form id="form-upload-chapter">
+                <input type="text" id="chapter-title" placeholder="Título do Capítulo" required>
+                <input type="number" id="chapter-number" placeholder="Número do Capítulo (Ex: 1)" required>
+                
+                <div id="chapter-volume-container" style="display: none;">
+                    <label style="margin-top: 10px; margin-bottom: 5px; color: var(--primary-color);">Este capítulo pertence a qual Volume?</label>
+                    <input type="number" id="chapter-volume" placeholder="Número do Volume (Padrão: 1)" min="1" value="1">
+                </div>
+
+                <div class="format-toolbar">
+                    <button type="button" id="format-bold" title="Negrito"><i data-lucide="bold"></i></button>
+                    <button type="button" id="format-italic" title="Itálico"><i data-lucide="italic"></i></button>
+                    <button type="button" id="format-quote" title="Citação"><i data-lucide="quote"></i></button>
+                </div>
+                
+                <textarea id="chapter-text" placeholder="Escreva o capítulo aqui... Selecione uma palavra e use os botões acima para formatar." rows="15" required></textarea>
+                <button type="submit" class="btn-primary">Publicar Capítulo</button>
+            </form>
+        </section>
+
+        <section id="view-perfil" class="view hidden">
+            <h2>Meu Perfil</h2>
+            <form id="form-profile" style="background: var(--surface-color); padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="" id="profile-avatar-preview" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+                </div>
+                <label>Nome de Usuário (Autor)</label>
+                <input type="text" id="profile-username" placeholder="Seu nome de autor" required>
+                
+                <label>URL da Foto de Perfil</label>
+                <input type="url" id="profile-avatar" placeholder="Link da imagem de perfil">
+                
+                <label>Biografia (Máx. 250 caracteres)</label>
+                <textarea id="profile-bio" placeholder="Fale um pouco sobre você..." maxlength="250" rows="3"></textarea>
+                
+                <label>E-mail Vinculado</label>
+                <input type="email" id="profile-email" disabled style="opacity: 0.6; cursor: not-allowed;">
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="submit" class="btn-primary">Salvar Perfil</button>
+                    <button type="button" id="btn-reset-password" class="btn-secondary">Redefinir Senha</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="view-public-profile" class="view hidden">
+            <button class="back-btn" id="back-from-public-profile-btn"><i data-lucide="arrow-left"></i> Voltar</button>
+            <div class="public-profile-header" style="text-align: center; background: var(--surface-color); padding: 30px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <img src="" id="public-profile-avatar" alt="Avatar do Autor" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary-color);">
+                <h2 id="public-profile-name" style="margin-bottom: 10px;">Nome do Autor</h2>
+                <p id="public-profile-bio" style="color: var(--text-muted); max-width: 600px; margin: 0 auto;"></p>
+            </div>
+            <h3 style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Obras Publicadas</h3>
+            <div id="public-author-novels-grid" class="grid"></div>
+        </section>
+
+        <section id="view-minhas-novels" class="view hidden">
+            <h2>Minhas Light Novels</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Gerencie as obras que você publicou.</p>
+            <div id="minhas-novels-grid" class="grid"></div>
+        </section>
+
+        <section id="view-reader" class="view hidden">
+            <div class="reader-toolbar top">
+                <button class="back-btn" id="reader-back-btn"><i data-lucide="arrow-left"></i></button>
+                <span id="reader-title">Título</span>
+                <button id="btn-reader-mode"><i data-lucide="moon"></i></button>
+            </div>
+            
+            <div id="reader-content" class="reader-content"></div>
+
+            <div class="reader-toolbar bottom">
+                <button id="btn-prev-chapter"><i data-lucide="chevron-left"></i> Ant.</button>
+                <div class="font-controls">
+                    <button id="btn-font-down"><i data-lucide="minus"></i> aA</button>
+                    <button id="btn-font-up"><i data-lucide="plus"></i> aA</button>
+                </div>
+                <button id="btn-next-chapter">Próx. <i data-lucide="chevron-right"></i></button>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content login-box">
+            <div class="modal-header">
+                <h2>Acesse sua Conta</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; text-align: center;">Faça login para publicar e interagir com as obras.</p>
+            
+            <button id="btn-google-login" class="btn-google">
+                <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Entrar com Google
+            </button>
+            
+            <div class="divider">ou</div>
+            
+            <form id="form-login">
+                <div class="input-group">
+                    <i data-lucide="mail"></i>
+                    <input type="email" id="login-email" placeholder="Seu E-mail" required>
+                </div>
+                <div class="input-group">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="login-password" placeholder="Sua Senha" required>
+                </div>
+                <button type="submit" class="btn-primary">Entrar com Email</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sobre-modal" class="modal hidden">
+        <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Sobre o LN Reader</h2>
+                <span class="close-sobre-modal" style="font-size: 24px; cursor: pointer;">&times;</span>
+            </div>
+            <div style="margin-top: 15px; color: var(--text-color); font-size: 0.9rem;">
+                <p>O <strong>LN Reader</strong> é uma plataforma independente dedicada a conectar autores e leitores apaixonados por Light Novels e webnovels.</p>
+                <h3 style="margin-top: 15px; font-size: 1.1rem; color: var(--primary-color);">Direitos Autorais e Propriedade Intelectual</h3>
+                <p style="margin-top: 5px;">Cada autor retém <strong>100% dos direitos autorais</strong> sobre as histórias, personagens e universos que publicar nesta plataforma. O LN Reader não reivindica a posse de nenhuma obra postada pelos seus usuários.</p>
+                <p style="margin-top: 5px;">Ao publicar, o autor declara ter os direitos legais sobre o texto e a imagem de capa utilizada.</p>
+                <h3 style="margin-top: 15px; font-size: 1.1rem; color: var(--danger-color);">Isenção de Responsabilidade</h3>
+                <p style="margin-top: 5px;">O LN Reader funciona como um provedor de hospedagem de conteúdo gerado pelo usuário. <strong>Os administradores e desenvolvedores deste site não se responsabilizam de nenhuma forma</strong> pelo conteúdo, opiniões, mídias ou textos postados pelos usuários.</p>
+                <p style="margin-top: 5px;">Obrigatoriamente, os usuários devem classificar adequadamente suas obras (+18, Gore, Temas Sensíveis). Obras que violem as leis locais ou incitem ódio poderão ser removidas sem aviso prévio.</p>
+                <br><p style="text-align: center; color: var(--primary-color); font-weight: bold;">Versão 1.4.0</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="regras-modal" class="modal hidden">
+        <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Regras de Postagem</h2>
+                <span class="close-regras-modal" style="font-size: 24px; cursor: pointer;">&times;</span>
+            </div>
+            <div style="margin-top: 15px; color: var(--text-color); font-size: 0.9rem;">
+                <p>Para garantir um ambiente seguro e organizado, siga as regras abaixo. O descumprimento pode resultar na exclusão da obra.</p>
+                <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Classificação Correta:</strong> Você DEVE marcar as tags de +18, Gore ou Temas Sensíveis se a sua obra contiver esse tipo de material.</li>
+                    <li><strong>Proibido Plágio:</strong> Não poste obras de outros autores fingindo ser suas. Traduções devem ter a devida permissão ou indicação.</li>
+                    <li><strong>Conteúdo Ilegal:</strong> É terminantemente proibido postar qualquer conteúdo que viole leis vigentes, promova discurso de ódio, racismo ou exploração infantil.</li>
+                    <li><strong>Spam:</strong> Não publique capítulos vazios ou repetidos apenas para ganhar visibilidade.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="privacidade-modal" class="modal hidden">
+        <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Termos e Privacidade</h2>
+                <span class="close-privacidade-modal" style="font-size: 24px; cursor: pointer;">&times;</span>
+            </div>
+            <div style="margin-top: 15px; color: var(--text-color); font-size: 0.9rem;">
+                <p>Nós valorizamos sua privacidade. Abaixo explicamos como usamos seus dados:</p>
+                <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Coleta de Dados:</strong> O login via Google ou E-mail coleta apenas os dados essenciais de autenticação fornecidos pelo provedor.</li>
+                    <li><strong>Armazenamento:</strong> Suas histórias, preferências e perfil ficam salvos em servidores seguros (Firebase).</li>
+                    <li><strong>Uso:</strong> Não vendemos seus dados para terceiros. As informações de perfil (nome de autor, bio, avatar) são públicas para identificação de autoria.</li>
+                    <li><strong>Cookies:</strong> Usamos o armazenamento local do navegador apenas para salvar preferências de leitura (como tamanho da fonte e progresso).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="doacoes-modal" class="modal hidden">
+        <div class="modal-content" style="text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h2>Apoie o LN Reader</h2>
+                <span class="close-doacoes-modal" style="position: absolute; right: 0; font-size: 24px; cursor: pointer;">&times;</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                O LN Reader é gratuito para todos! Suas doações nos ajudam a manter os servidores online, pagar o banco de dados e continuar trazendo novas atualizações. Toda ajuda é muito bem-vinda!
+            </p>
+
+            <div class="donation-options" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <button class="btn-donation active" data-val="2">R$ 2</button>
+                <button class="btn-donation" data-val="5">R$ 5</button>
+                <button class="btn-donation" data-val="10">R$ 10</button>
+                <button class="btn-donation" data-val="15">R$ 15</button>
+                <button class="btn-donation" data-val="custom">Outro</button>
+            </div>
+
+            <div id="donation-view-qr" style="background: #2a2a2a; padding: 20px; border-radius: 8px;">
+                <h4 id="donation-title" style="margin-bottom: 10px; color: var(--primary-color);">Doar R$ 2,00 via PIX</h4>
+                <img id="donation-qr-img" src="https://8upload.com/image/31af6933cedc2c66/Screenshot_20260315_160934_Mercado_Pago.jpg" alt="QR Code Pix" style="width: 200px; height: 200px; border-radius: 8px; margin-bottom: 15px;">
+                <p id="donation-pix-key" style="font-size: 0.85rem; word-break: break-all; color: var(--text-muted);">
+                    Ou use a chave Pix: <br><strong style="color: white; user-select: all;">d8564c3b-f09e-4d15-bc4d-79ad529066fc</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
