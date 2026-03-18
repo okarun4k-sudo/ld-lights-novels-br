@@ -75,25 +75,34 @@
     <main id="app-container">
         
         <section id="view-home" class="view active">
-            <div class="search-bar hidden" id="search-bar-container">
-                <input type="text" id="search-input" placeholder="Buscar por título ou autor...">
-                <select id="search-genre">
-                    <option value="">Todos os Gêneros</option>
-                    <option value="Ação">Ação</option>
-                    <option value="Comédia">Comédia</option>
-                    <option value="Drama">Drama</option>
-                    <option value="Fantasia">Fantasia</option>
-                    <option value="Harém">Harém</option>
-                    <option value="Isekai">Isekai</option>
-                    <option value="Mistério">Mistério</option>
-                    <option value="Romance">Romance</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Slice of Life">Slice of Life</option>
-                    <option value="Sobrenatural">Sobrenatural</option>
-                    <option value="Terror">Terror</option>
-                    <option value="Wuxia">Wuxia</option>
-                    <option value="Xianxia">Xianxia</option>
-                </select>
+            <div class="search-bar hidden" id="search-bar-container" style="flex-direction: column;">
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <input type="text" id="search-input" placeholder="Buscar por título ou autor..." style="flex: 1;">
+                    <select id="search-genre" style="width: auto;">
+                        <option value="">Todos os Gêneros</option>
+                        <option value="Ação">Ação</option>
+                        <option value="Comédia">Comédia</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Fantasia">Fantasia</option>
+                        <option value="Harém">Harém</option>
+                        <option value="Isekai">Isekai</option>
+                        <option value="Mistério">Mistério</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Sci-Fi">Sci-Fi</option>
+                        <option value="Slice of Life">Slice of Life</option>
+                        <option value="Sobrenatural">Sobrenatural</option>
+                        <option value="Terror">Terror</option>
+                        <option value="Wuxia">Wuxia</option>
+                        <option value="Xianxia">Xianxia</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+                    <input type="text" id="search-tags-input" placeholder="Buscar por tags extras (ex: magia, escolar)..." style="flex: 1;">
+                    <select id="search-tags-logic" style="width: auto;">
+                        <option value="AND">Contém TODAS as tags (AND)</option>
+                        <option value="OR">Contém QUALQUER tag (OR)</option>
+                    </select>
+                </div>
             </div>
             <div id="novels-grid" class="grid"></div>
         </section>
@@ -144,6 +153,9 @@
                     <option value="Xianxia">Xianxia</option>
                 </select>
                 
+                <label>Tags Personalizadas (Múltiplas - separadas por vírgula)</label>
+                <input type="text" id="novel-custom-tags" placeholder="Ex: reencarnação, sistema, magia, escolar">
+
                 <div class="tags-container" style="margin-bottom: 20px; background: var(--surface-color); padding: 15px; border-radius: 8px;">
                     <h4>Organização</h4>
                     <div class="toggle-container">
@@ -194,6 +206,9 @@
                     <option value="Wuxia">Wuxia</option>
                     <option value="Xianxia">Xianxia</option>
                 </select>
+
+                <label>Tags Personalizadas (Múltiplas - separadas por vírgula)</label>
+                <input type="text" id="edit-novel-custom-tags" placeholder="Ex: reencarnação, sistema, magia, escolar">
                 
                 <div class="tags-container" style="margin-bottom: 20px; background: var(--surface-color); padding: 15px; border-radius: 8px;">
                     <h4>Organização</h4>
@@ -233,6 +248,9 @@
                     <input type="number" id="chapter-volume" placeholder="Número do Volume (Padrão: 1)" min="1" value="1">
                 </div>
 
+                <label style="margin-top: 10px; margin-bottom: 5px;">Avisos / Gatilhos do Capítulo (Opcional - sep. por vírgula)</label>
+                <input type="text" id="chapter-custom-tags" placeholder="Ex: Violência, Sangue, Morte">
+
                 <div class="format-toolbar">
                     <button type="button" id="format-bold" title="Negrito"><i data-lucide="bold"></i></button>
                     <button type="button" id="format-italic" title="Itálico"><i data-lucide="italic"></i></button>
@@ -246,6 +264,7 @@
 
         <section id="view-perfil" class="view hidden">
             <h2>Meu Perfil</h2>
+            <div id="profile-stats-self" style="text-align: center; margin-top: 10px; color: var(--primary-color); font-weight: bold;"></div>
             <form id="form-profile" style="background: var(--surface-color); padding: 20px; border-radius: 8px; margin-top: 20px;">
                 <div style="text-align: center; margin-bottom: 20px;">
                     <img src="" id="profile-avatar-preview" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
@@ -259,6 +278,12 @@
                 <label>Biografia (Máx. 250 caracteres)</label>
                 <textarea id="profile-bio" placeholder="Fale um pouco sobre você..." maxlength="250" rows="3"></textarea>
                 
+                <label>Link do Instagram (Opcional)</label>
+                <input type="url" id="profile-instagram" placeholder="https://instagram.com/seu_perfil">
+
+                <label>Link do Servidor no Discord (Opcional)</label>
+                <input type="url" id="profile-discord" placeholder="https://discord.gg/seu_convite">
+
                 <label>E-mail Vinculado</label>
                 <input type="email" id="profile-email" disabled style="opacity: 0.6; cursor: not-allowed;">
                 
@@ -275,6 +300,10 @@
                 <img src="" id="public-profile-avatar" alt="Avatar do Autor" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary-color);">
                 <h2 id="public-profile-name" style="margin-bottom: 10px;">Nome do Autor</h2>
                 <p id="public-profile-bio" style="color: var(--text-muted); max-width: 600px; margin: 0 auto;"></p>
+                
+                <div id="public-profile-stats" style="margin-top: 10px; color: var(--primary-color); font-weight: bold;"></div>
+                <div id="public-profile-socials" style="margin-top: 10px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;"></div>
+                <button id="btn-follow-author" class="btn-primary" style="width: auto; margin: 15px auto 0; display: none;">Seguir</button>
             </div>
             <h3 style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Obras Publicadas</h3>
             <div id="public-author-novels-grid" class="grid"></div>

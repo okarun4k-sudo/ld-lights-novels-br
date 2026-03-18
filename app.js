@@ -175,7 +175,12 @@ onAuthStateChanged(auth, async (user) => {
                 avatarURL: user.photoURL || 'https://ui-avatars.com/api/?name=User&background=random',
                 email: user.email,
                 favoritos: [],
-                historico: []
+                historico: [],
+                seguidores: [],
+                seguindo: [],
+                capitulosLidos: [],
+                instagram: '',
+                discord: ''
             };
             await setDoc(userRef, newProfile);
             userProfile = newProfile;
@@ -184,6 +189,11 @@ onAuthStateChanged(auth, async (user) => {
             // Garante que as arrays existam para usuários antigos
             if(!userProfile.favoritos) userProfile.favoritos = [];
             if(!userProfile.historico) userProfile.historico = [];
+            if(!userProfile.seguidores) userProfile.seguidores = [];
+            if(!userProfile.seguindo) userProfile.seguindo = [];
+            if(!userProfile.capitulosLidos) userProfile.capitulosLidos = [];
+            if(!userProfile.instagram) userProfile.instagram = '';
+            if(!userProfile.discord) userProfile.discord = '';
         }
 
         document.getElementById('sidebar-username').textContent = userProfile.username;
@@ -224,7 +234,13 @@ function loadProfileView() {
     document.getElementById('profile-avatar').value = userProfile.avatarURL;
     document.getElementById('profile-bio').value = userProfile.bio;
     document.getElementById('profile-email').value = currentUser.email;
+    document.getElementById('profile-instagram').value = userProfile.instagram || '';
+    document.getElementById('profile-discord').value = userProfile.discord || '';
     document.getElementById('profile-avatar-preview').src = userProfile.avatarURL;
+
+    const seguidoresContagem = (userProfile.seguidores || []).length;
+    const seguindoContagem = (userProfile.seguindo || []).length;
+    document.getElementById('profile-stats-self').innerHTML = `Seguidores: ${seguidoresContagem} | Seguindo: ${seguindoContagem}`;
 }
 
 document.getElementById('form-profile').addEventListener('submit', async (e) => {
@@ -232,12 +248,16 @@ document.getElementById('form-profile').addEventListener('submit', async (e) => 
     const newUsername = document.getElementById('profile-username').value;
     const newAvatar = document.getElementById('profile-avatar').value || 'https://ui-avatars.com/api/?name='+newUsername;
     const newBio = document.getElementById('profile-bio').value;
+    const newInstagram = document.getElementById('profile-instagram').value;
+    const newDiscord = document.getElementById('profile-discord').value;
 
     try {
         await updateDoc(doc(db, 'users', currentUser.uid), {
-            username: newUsername, avatarURL: newAvatar, bio: newBio
+            username: newUsername, avatarURL: newAvatar, bio: newBio,
+            instagram: newInstagram, discord: newDiscord
         });
         userProfile.username = newUsername; userProfile.avatarURL = newAvatar; userProfile.bio = newBio;
+        userProfile.instagram = newInstagram; userProfile.discord = newDiscord;
         document.getElementById('sidebar-username').textContent = newUsername;
         document.getElementById('sidebar-avatar').src = newAvatar;
         document.getElementById('profile-avatar-preview').src = newAvatar;
@@ -284,6 +304,10 @@ function renderHome(novels) {
     const showSensible = document.getElementById('filter-sensible').checked;
     const showGore = document.getElementById('filter-gore').checked;
 
+    // Filtro por Tags Múltiplas (AND/OR)
+    const searchTagsInput = document.getElementById('search-tags-input').value.toLowerCase().split(',').map(t=>t.trim()).filter(t=>t);
+    const searchTagsLogic = document.getElementById('search-tags-logic').value;
+
     let filtered = novels.filter(novel => {
         const matchText = novel.titulo.toLowerCase().includes(searchText) || novel.autorNome.toLowerCase().includes(searchText);
         const matchGenre = searchGenre === "" || novel.genero === searchGenre;
@@ -293,7 +317,17 @@ function renderHome(novels) {
         if(novel.tags?.sensible && !showSensible) matchTags = false;
         if(novel.tags?.gore && !showGore) matchTags = false;
 
-        return matchText && matchGenre && matchTags;
+        let matchCustomTags = true;
+        if (searchTagsInput.length > 0) {
+            const novelTags = (novel.customTags || []).map(t => t.toLowerCase());
+            if (searchTagsLogic === 'AND') {
+                matchCustomTags = searchTagsInput.every(t => novelTags.includes(t));
+            } else {
+                matchCustomTags = searchTagsInput.some(t => novelTags.includes(t));
+            }
+        }
+
+        return matchText && matchGenre && matchTags && matchCustomTags;
     });
 
     if(filtered.length === 0) {
@@ -332,6 +366,8 @@ function renderHome(novels) {
 
 document.getElementById('search-input').addEventListener('input', () => renderHome(allNovelsCache));
 document.getElementById('search-genre').addEventListener('change', () => renderHome(allNovelsCache));
+document.getElementById('search-tags-input').addEventListener('input', () => renderHome(allNovelsCache));
+document.getElementById('search-tags-logic').addEventListener('change', () => renderHome(allNovelsCache));
 document.querySelectorAll('.home-filter').forEach(chk => chk.addEventListener('change', () => renderHome(allNovelsCache)));
 
 // --- FAVORITOS E HISTÓRICO ---
@@ -396,6 +432,7 @@ document.getElementById('form-upload-novel').addEventListener('submit', async (e
         autorNome: userProfile.username,
         temVolumes: document.getElementById('tag-volumes').checked,
         ratings: {},
+        customTags: document.getElementById('novel-custom-tags').value.split(',').map(t=>t.trim()).filter(t=>t),
         tags: {
             adult: document.getElementById('tag-18').checked,
             sensible: document.getElementById('tag-sensible').checked,
@@ -484,6 +521,12 @@ async function openNovel(novelId, pushHistory = true) {
             if(data.tags?.gore) tagsUI += `<span class="alert">Gore</span>`;
             if(data.tags?.sensible) tagsUI += `<span>Temas Sensíveis</span>`;
             if(data.temVolumes) tagsUI += `<span>Dividido em Volumes</span>`;
+            
+            if(data.customTags && data.customTags.length > 0) {
+                data.customTags.forEach(tag => {
+                    tagsUI += `<span class="tag-badge-custom" style="background:var(--primary-color); color:#121212; padding:4px 10px; border-radius:12px; font-size:0.8rem;">${tag}</span>`;
+                });
+            }
             tagsUI += `</div>`;
 
             let ratings = data.ratings || {};
@@ -538,7 +581,7 @@ async function openNovel(novelId, pushHistory = true) {
             `;
             lucide.createIcons();
 
-            // Interação de Estrelas
+            // Interação de Estrelas - CORREÇÃO
             const starElements = document.querySelectorAll('.star-rating .star');
             starElements.forEach(star => {
                 star.addEventListener('click', async (e) => {
@@ -546,9 +589,15 @@ async function openNovel(novelId, pushHistory = true) {
                     const val = parseInt(e.currentTarget.getAttribute('data-val'));
                     let newRatings = data.ratings || {};
                     newRatings[currentUser.uid] = val;
-                    await updateDoc(docRef, { ratings: newRatings });
-                    allNovelsCache = [];
-                    openNovel(novelId, false);
+                    
+                    try {
+                        await updateDoc(docRef, { ratings: newRatings });
+                        data.ratings = newRatings; // Força atualização local otimista
+                        allNovelsCache = [];
+                        openNovel(novelId, false); // Recarrega com a pontuação visual atualizada
+                    } catch (err) {
+                        alert("Erro ao enviar avaliação: " + err.message);
+                    }
                 });
                 star.addEventListener('mouseover', (e) => {
                     const val = parseInt(e.currentTarget.getAttribute('data-val'));
@@ -603,6 +652,7 @@ function openEditNovel(novelId, data) {
     document.getElementById('edit-novel-synopsis').value = data.sinopse;
     document.getElementById('edit-novel-cover').value = data.capaURL;
     document.getElementById('edit-novel-genre').value = data.genero;
+    document.getElementById('edit-novel-custom-tags').value = data.customTags ? data.customTags.join(', ') : '';
     
     document.getElementById('edit-tag-volumes').checked = data.temVolumes || false;
     document.getElementById('edit-tag-18').checked = data.tags?.adult || false;
@@ -620,6 +670,7 @@ document.getElementById('form-edit-novel').addEventListener('submit', async (e) 
         sinopse: document.getElementById('edit-novel-synopsis').value,
         capaURL: document.getElementById('edit-novel-cover').value,
         genero: document.getElementById('edit-novel-genre').value,
+        customTags: document.getElementById('edit-novel-custom-tags').value.split(',').map(t=>t.trim()).filter(t=>t),
         temVolumes: document.getElementById('edit-tag-volumes').checked,
         tags: {
             adult: document.getElementById('edit-tag-18').checked,
@@ -644,6 +695,9 @@ async function openPublicProfile(autorUID) {
     document.getElementById('public-profile-name').textContent = "Carregando...";
     document.getElementById('public-profile-bio').textContent = "";
     document.getElementById('public-profile-avatar').src = "https://via.placeholder.com/120";
+    document.getElementById('public-profile-stats').innerHTML = "";
+    document.getElementById('public-profile-socials').innerHTML = "";
+    document.getElementById('btn-follow-author').style.display = "none";
     
     const grid = document.getElementById('public-author-novels-grid');
     grid.innerHTML = '<p>Buscando obras...</p>';
@@ -655,6 +709,64 @@ async function openPublicProfile(autorUID) {
             document.getElementById('public-profile-name').textContent = userData.username;
             document.getElementById('public-profile-bio').textContent = userData.bio || "Este autor ainda não escreveu uma biografia.";
             document.getElementById('public-profile-avatar').src = userData.avatarURL || "https://ui-avatars.com/api/?name=Autor";
+            
+            // Seguidores e Seguindo HTML
+            let followersCount = (userData.seguidores || []).length;
+            let followingCount = (userData.seguindo || []).length;
+            document.getElementById('public-profile-stats').innerHTML = `Seguidores: ${followersCount} | Seguindo: ${followingCount}`;
+
+            // Socials HTML
+            let socialsHtml = '';
+            if (userData.instagram) {
+                socialsHtml += `<a href="${userData.instagram}" target="_blank" class="social-link btn-secondary" style="padding: 8px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; text-decoration: none; width: auto; margin:0;"><i data-lucide="instagram" style="width:16px;height:16px;"></i> Instagram</a>`;
+            }
+            if (userData.discord) {
+                socialsHtml += `<a href="${userData.discord}" target="_blank" class="social-link btn-secondary" style="padding: 8px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; text-decoration: none; width: auto; margin:0;"><i data-lucide="message-square" style="width:16px;height:16px;"></i> Discord</a>`;
+            }
+            document.getElementById('public-profile-socials').innerHTML = socialsHtml;
+
+            // Botão Seguir
+            const followBtn = document.getElementById('btn-follow-author');
+            if (currentUser && currentUser.uid !== autorUID) {
+                followBtn.style.display = 'block';
+                let isFollowing = userProfile && userProfile.seguindo && userProfile.seguindo.includes(autorUID);
+                followBtn.textContent = isFollowing ? 'Deixar de Seguir' : 'Seguir';
+                
+                // Remove existing listeners to avoid duplicate firing
+                const newFollowBtn = followBtn.cloneNode(true);
+                followBtn.parentNode.replaceChild(newFollowBtn, followBtn);
+                
+                newFollowBtn.addEventListener('click', async () => {
+                    try {
+                        const targetUserRef = doc(db, 'users', autorUID);
+                        const currentUserRef = doc(db, 'users', currentUser.uid);
+
+                        const freshTargetSnap = await getDoc(targetUserRef);
+                        let targetData = freshTargetSnap.data();
+                        let targetSeguidores = targetData.seguidores || [];
+                        let mySeguindo = userProfile.seguindo || [];
+
+                        if (mySeguindo.includes(autorUID)) {
+                            // Deixar de seguir
+                            mySeguindo = mySeguindo.filter(id => id !== autorUID);
+                            targetSeguidores = targetSeguidores.filter(id => id !== currentUser.uid);
+                        } else {
+                            // Seguir
+                            mySeguindo.push(autorUID);
+                            targetSeguidores.push(currentUser.uid);
+                        }
+
+                        userProfile.seguindo = mySeguindo;
+                        await updateDoc(currentUserRef, { seguindo: mySeguindo });
+                        await updateDoc(targetUserRef, { seguidores: targetSeguidores });
+
+                        openPublicProfile(autorUID); // recarrega UI
+                    } catch (err) {
+                        alert("Erro ao seguir/deixar de seguir: " + err.message);
+                    }
+                });
+            }
+
         } else {
             document.getElementById('public-profile-name').textContent = "Autor Desconhecido";
             document.getElementById('public-profile-bio').textContent = "Sem informações disponíveis.";
@@ -738,7 +850,17 @@ async function loadChapters(novelId, isAuthor) {
             const div = document.createElement('div');
             div.className = 'chapter-item';
             
-            let htmlInner = `<div style="flex:1;"><strong>Capítulo ${data.numero}:</strong> ${data.titulo}</div>`;
+            // Marca de "Visto"
+            let isRead = userProfile && userProfile.capitulosLidos && userProfile.capitulosLidos.includes(data.id);
+            let readBadge = isRead ? `<span style="color:var(--primary-color); font-size: 0.8rem; margin-left:10px; display:inline-flex; align-items:center;"><i data-lucide="check" style="width:14px;height:14px;margin-right:2px;"></i> LIDO</span>` : '';
+            
+            // Tags do Capítulo
+            let capTagsHtml = '';
+            if(data.chapterTags && data.chapterTags.length > 0) {
+                capTagsHtml = `<div style="font-size:0.75rem; color:var(--danger-color); margin-top:5px;"><i data-lucide="alert-triangle" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> Avisos: ${data.chapterTags.join(', ')}</div>`;
+            }
+
+            let htmlInner = `<div style="flex:1;"><strong>Capítulo ${data.numero}:</strong> ${data.titulo} ${readBadge} ${capTagsHtml}</div>`;
             
             if(isAuthor) {
                 htmlInner += `<button class="btn-danger delete-cap-btn" data-id="${data.id}"><i data-lucide="trash-2"></i></button>`;
@@ -746,6 +868,7 @@ async function loadChapters(novelId, isAuthor) {
 
             div.innerHTML = htmlInner;
             if(ultimoLido === data.id) div.style.borderLeftColor = "var(--primary-color)";
+            if(isRead) div.style.opacity = "0.7"; // Suaviza itens já lidos
             
             div.addEventListener('click', (e) => {
                 if(!e.target.closest('.delete-cap-btn')) openReader(data.id, data);
@@ -807,6 +930,7 @@ document.getElementById('form-upload-chapter').addEventListener('submit', async 
         numero: Number(document.getElementById('chapter-number').value),
         texto: document.getElementById('chapter-text').value,
         volume: capVolume,
+        chapterTags: document.getElementById('chapter-custom-tags').value.split(',').map(t=>t.trim()).filter(t=>t),
         createdAt: new Date()
     };
 
@@ -830,7 +954,7 @@ async function openReader(capId, capData = null, pushHistory = true) {
     
     localStorage.setItem(`ln_progress_${currentNovelId}`, capId);
 
-    // Salva no Histórico do Firebase (move para o começo da fila)
+    // Salva no Histórico do Firebase e Marca como Lido
     if(currentUser && userProfile && currentNovelId) {
         let hist = userProfile.historico || [];
         hist = hist.filter(id => id !== currentNovelId); // remove se já existir
@@ -838,7 +962,14 @@ async function openReader(capId, capData = null, pushHistory = true) {
         if(hist.length > 50) hist.pop(); // limita a 50
         
         userProfile.historico = hist;
-        updateDoc(doc(db, 'users', currentUser.uid), { historico: hist }).catch(console.error);
+
+        let lidos = userProfile.capitulosLidos || [];
+        if(!lidos.includes(capId)) {
+            lidos.push(capId);
+            userProfile.capitulosLidos = lidos;
+        }
+
+        updateDoc(doc(db, 'users', currentUser.uid), { historico: hist, capitulosLidos: lidos }).catch(console.error);
     }
 
     const content = document.getElementById('reader-content');
@@ -868,7 +999,13 @@ function renderReaderData(capId, capData) {
     
     // Renderiza as formatações (b, i, blockquote) com segurança através das quebras de linha
     const formatText = capData.texto.split('\n').map(p => p.trim() ? `<p style="margin-bottom:20px;">${p}</p>` : '').join('');
-    content.innerHTML = `<h2 style="margin-bottom: 30px; text-align:center;">${capData.titulo}</h2>${formatText}`;
+    
+    let renderCapTags = '';
+    if(capData.chapterTags && capData.chapterTags.length > 0) {
+        renderCapTags = `<div style="text-align:center; color:var(--danger-color); font-size:0.85rem; margin-bottom: 20px; padding:10px; border:1px solid var(--danger-color); border-radius:8px;"><strong>Avisos de Gatilho:</strong> ${capData.chapterTags.join(', ')}</div>`;
+    }
+
+    content.innerHTML = `<h2 style="margin-bottom: 30px; text-align:center;">${capData.titulo}</h2>${renderCapTags}${formatText}`;
 
     const currentIndex = currentChaptersList.findIndex(c => c.id === capId);
     const btnPrev = document.getElementById('btn-prev-chapter');

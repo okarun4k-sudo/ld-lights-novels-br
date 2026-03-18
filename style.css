@@ -237,3 +237,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .modal-header h2 { font-size: 1.4rem; }
 .close-modal, .close-sobre-modal, .close-regras-modal, .close-privacidade-modal, .close-doacoes-modal { font-size: 24px; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
 .close-modal:hover, .close-sobre-modal:hover, .close-regras-modal:hover, .close-privacidade-modal:hover, .close-doacoes-modal:hover { color: var(--danger-color); }
+
+/* Novos Elementos Adicionados */
+.social-link { transition: background-color 0.2s, color 0.2s; }
+.social-link:hover { background-color: var(--primary-color); color: #121212 !important; }
